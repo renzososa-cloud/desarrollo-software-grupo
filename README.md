@@ -20,8 +20,15 @@ El repositorio está organizado por directorios correspondientes a cada trabajo 
 
 ```text
 /
-├── TP1-Introduccion/        # Trabajo Práctico Nº 1: [Tema principal]
-├── TP2-Requisitos/          # Trabajo Práctico Nº 2: [Tema principal]
-├── TP3-Arquitectura/        # Trabajo Práctico Nº 3: [Tema principal]
-├── docs/                    # Documentación general, diagramas y UML
+├── ToString - Equal y HashCode - Colecciones/        # Trabajo Práctico Nº1: [Estructuras de Datos, Contrato Equals/HashCode y Complejidad Algorítmica]
+├── JPA (Jakarta Persistence API)                     # Trabajo Práctico Nº : [Tema principal]
+├── HTML                                              # Trabajo Práctico Nº : [Tema principal]
+├── CSS                                               # Trabajo Práctico Nº : [Tema principal]
+├── JavaScript                                        # Trabajo Práctico Nº : [Tema principal]
+├── Lombok y DTO                                      # Trabajo Práctico Nº : [Tema principal]
+├── Programación Funcional                            # Trabajo Práctico Nº : [Tema principal]
+├── Spring Boot (Fundamentos)                         # Trabajo Práctico Nº : [Tema principal]
+├── APIs REST con Spring Boot                         # Trabajo Práctico Nº : [Tema principal]
+├── Programación Orientada a Objetos                  # Trabajo Práctico Nº : [Tema principal]
+├── Introducción a FastAPI y Pydantic                 # Trabajo Práctico Nº : [Tema principal]
 └── README.md                # Descripción general del repositorio
