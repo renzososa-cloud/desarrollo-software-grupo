@@ -1,27 +1,19 @@
-# 💻 Desarrollo de Software - Trabajos Prácticos
+# Trabajo Práctico: Estructuras de Datos, Contrato Equals/HashCode y Complejidad Algorítmica
 
-Repositorio oficial del grupo para la cursada de la materia **Desarrollo de Software**. Aquí se documentan y alojan los distintos trabajos prácticos (TPs), entregas y proyectos desarrollados a lo largo del ciclo lectivo.
-
----
-
-## 👥 Integrantes del Equipo
-
-| Apellido y Nombre | Legajo / ID | Usuario de GitHub |
-| :--- | :---: | :---: |
-| [Sosa Renzo] | [50173] | [@renzososa-cloud](https://github.com/renzososa-cloud) |
-| [Rodríguez Quiñonez Jessica Magaly] | [48913] | [@jessi2001-cmd](https://github.com/jessi2001-cmd) |
-| [Sosa Avila Florencia Natasha] | [50716] | [@flornsa](https://github.com/flornsa) |
+Este repositorio contiene el desarrollo del trabajo práctico correspondiente a la materia **Desarrollo de Software**. El proyecto se enfoca en el análisis, diagnóstico y optimización de estructuras de datos en Java, haciendo especial hincapié en el rendimiento backend y las buenas prácticas de programación.
 
 ---
 
-## 📂 Estructura del Repositorio
+## 🚀 Temas Principales
 
-El repositorio está organizado por directorios correspondientes a cada trabajo práctico o módulo de la cursada:
+* **Estructuras de Datos Hash:** Uso eficiente y análisis interno de `HashSet` y `HashMap` provistas por el ecosistema de Java (`java.util`).
+* **Contrato `equals()` y `hashCode()`:** Estudio de su correcta implementación, la relación lógica entre ambos métodos y los riesgos críticos asociados a la mutabilidad de los objetos almacenados.
+* **Complejidad Algorítmica:** Evaluación del rendimiento (Notación Big-O) en operaciones de búsqueda, inserción y procesamiento masivo de datos.
 
-```text
-/
-├── TP1-Introduccion/        # Trabajo Práctico Nº 1: [Tema principal]
-├── TP2-Requisitos/          # Trabajo Práctico Nº 2: [Tema principal]
-├── TP3-Arquitectura/        # Trabajo Práctico Nº 3: [Tema principal]
-├── docs/                    # Documentación general, diagramas y UML
-└── README.md                # Descripción general del repositorio
+---
+
+## 👥 Autores y Contribuciones
+
+Trabajo realizado en el marco de la asignatura **Desarrollo de Software**.
+
+* ¿Tienes alguna sugerencia o consulta sobre la implementación? No dudes en abrir un *Issue* o enviar un *Pull Request* a esta rama.
