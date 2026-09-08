@@ -11,6 +11,7 @@ Repositorio oficial del grupo para la cursada de la materia **Desarrollo de Soft
 | [Sosa Renzo] | [50173] | [@renzososa-cloud](https://github.com/renzososa-cloud) |
 | [Rodríguez Quiñonez Jessica Magaly] | [48913] | [@jessi2001-cmd](https://github.com/jessi2001-cmd) |
 | [Sosa Avila Florencia Natasha] | [50716] | [@flornsa](https://github.com/flornsa) |
+| [Cirrincione Bruno] | [51938] | [@Nuno000](https://github.com/Nuno000) |
 
 ---
 
