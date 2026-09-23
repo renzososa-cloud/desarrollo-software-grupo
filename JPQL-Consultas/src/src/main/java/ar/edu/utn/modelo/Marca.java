@@ -1,0 +1,30 @@
+package ar.edu.utn.modelo;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+
+@Entity
+@Table(name = "marca")
+public class Marca extends AuditoriaApp {
+    @Column(nullable = false, length = 100)
+    private String denominacion;
+    @Column(nullable = false, length = 10)
+    private Integer codigo;
+    public Marca() {}
+
+    public String getDenominacion() {
+        return denominacion;
+    }
+
+    public void setDenominacion(String denominacion) {
+        this.denominacion = denominacion;
+    }
+
+    public Integer getCodigo() {
+        return codigo;
+    }
+
+    public void setCodigo(Integer codigo) {
+        this.codigo = codigo;
+    }
+}
