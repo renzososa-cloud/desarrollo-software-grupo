@@ -7,7 +7,7 @@ import com.itextpdf.text.Phrase;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
-import jakarta.persistence.EntityManager;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
@@ -16,32 +16,15 @@ import java.io.IOException;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
-import jakarta.persistence.PersistenceContext;
 
 @Service
 public class ReporteService {
 
-    @PersistenceContext
-    private EntityManager em;
-
+    @Autowired
+    private FacturaService facturaService;
+    
     public void generarReportes() {
-        String jpql = "SELECT new ar.edu.utn.dto.FacturaReporteDTO(" +
-                " f.numero, " +
-                " f.fechaEmision, " +
-                " COALESCE(c.denominacion, 'Consumidor Final'), " +
-                " ci.denominacion, " +
-                " pv.descripcion, " +
-                " f.importeTotal, " +
-                " COUNT(d) " +
-                ") " +
-                "FROM FacturaVenta f " +
-                "LEFT JOIN f.cliente c " +
-                "JOIN f.condicionIva ci " +
-                "JOIN f.puntoVenta pv " +
-                "JOIN f.detalles d " +
-                "GROUP BY f.id, f.numero, f.fechaEmision, c.denominacion, ci.denominacion, pv.descripcion, f.importeTotal";
-
-        List<FacturaReporteDTO> reporte = em.createQuery(jpql, FacturaReporteDTO.class).getResultList();
+        List<FacturaReporteDTO> reporte = facturaService.buscarFacturasFiltradas(null, null, null, null);
 
         generarPDF(reporte, "ReporteFacturas.pdf");
         generarTxt(reporte, "ReporteFacturas.txt");
