@@ -28,7 +28,7 @@ El repositorio está organizado por directorios correspondientes a cada trabajo 
 - [ ] 07 - Programación Funcional
 - [x] [08 - JPA](./JPA-ORM-Hibernate)
 - [x] [09 - JPQL](./JPQL-Consultas)
-- [ ] 10 - Fundamentos Spring Boot
+- [x] [10 - Fundamentos Spring Boot](./Spring-Boot)
 - [ ] 11 - APIs REST Spring Boot
 - [ ] 12 - POO
 - [ ] 13 - FastAPI
