@@ -6,6 +6,9 @@ import ar.edu.utn.dto.FacturaRequestDTO;
 import ar.edu.utn.excepciones.RecursoNoEncontradoException;
 import ar.edu.utn.modelo.*;
 import ar.edu.utn.repositorio.*;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -225,6 +228,9 @@ public class FacturaService {
         }
     }
 
+    @Autowired
+    private ResourceLoader resourceLoader;
+
     @Transactional
     public FacturaVenta informarArca(Long id) {
         FacturaVenta factura = facturaRepository.findById(id)
@@ -235,9 +241,15 @@ public class FacturaService {
         }
 
         try {
+            // Obtenemos la ruta absoluta dinámica en tiempo de ejecución
+            String keyPath = resourceLoader.getResource("classpath:privada_test.key")
+                                           .getFile()
+                                           .getAbsolutePath();
+            String certPath = resourceLoader.getResource("classpath:certificado_test.crt")
+                                            .getFile()
+                                            .getAbsolutePath();
+
             String cuit = "23405971674";
-            String keyPath = "C:\\Flor\\Desarrollo de Software\\desarrollo-software-grupo\\Sistema-Facturacion\\Backend-Facturacion\\src\\main\\resources\\privada_test.key";
-            String certPath = "C:\\Flor\\Desarrollo de Software\\desarrollo-software-grupo\\Sistema-Facturacion\\Backend-Facturacion\\src\\main\\resources\\certificado_test.crt";
             int puntoDeVenta = 1;
 
             String[] auth = ar.edu.utn.arca.AfipWsaaClient.obtenerTokenYSign(keyPath, certPath, "wsfe", cuit);
