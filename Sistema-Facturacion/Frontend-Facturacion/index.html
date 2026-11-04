@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Facturación</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="container">
+    <header>
+        <div class="header-title">
+            <h1>Gestión de Facturación</h1>
+            <p>Sistema Integrado de Facturación Electrónica y Autorización Fiscal</p>
+        </div>
+        <button id="themeToggle" aria-label="Cambiar modo oscuro/claro">🌙</button>
+    </header>
+
+    <!-- Buscador Avanzado de Comprobantes con Filtros de Cátedra -->
+    <section class="search-section card">
+        <h2>Buscador de Comprobantes</h2>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="searchNumero">Nro. Factura</label>
+                <input type="number" id="searchNumero" placeholder="Ej: 1001">
+            </div>
+            <div class="form-group">
+                <label for="searchFechaDesde">Fecha Desde</label>
+                <input type="date" id="searchFechaDesde">
+            </div>
+            <div class="form-group">
+                <label for="searchFechaHasta">Fecha Hasta</label>
+                <input type="date" id="searchFechaHasta">
+            </div>
+            <div class="form-group">
+                <label for="searchCliente">Cliente</label>
+                <input type="text" id="searchCliente" placeholder="Buscar por cliente...">
+            </div>
+            <div class="form-group">
+                <label for="searchEstadoArca">Estado ARCA</label>
+                <select id="searchEstadoArca">
+                    <option value="">Todos</option>
+                    <option value="true">Informadas (Con CAE)</option>
+                    <option value="false">No Informadas</option>
+                </select>
+            </div>
+            <div class="form-group align-bottom">
+                <button id="btnBuscar" type="button" class="btn-primary">Buscar</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Módulo de Nueva Factura con Subsección "Datos de la Factura" -->
+    <section class="invoice-section card">
+        <h2>Nueva Factura</h2>
+        <form id="facturaForm">
+
+            <h3>Datos de la Factura</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="fechaEmision">Fecha de Emisión</label>
+                    <input type="date" id="fechaEmision" required>
+                </div>
+                <div class="form-group">
+                    <label for="puntoVentaId">Punto de Venta</label>
+                    <select id="puntoVentaId" required>
+                        <option value="1">0001 - Casa Central Mendoza</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Cliente</label>
+                    <div class="input-group-modal">
+                        <input type="hidden" id="clienteId" value="1">
+                        <input type="text" id="clienteNombre" value="Cliente Final (27-12345678-9)" readonly>
+                        <button type="button" id="btnAbrirModalCliente" class="btn-primary" title="Buscar Cliente">🔍</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="condicionIvaId">Condición frente al IVA</label>
+                    <select id="condicionIvaId" required>
+                        <option value="1">Responsable Inscripto (Factura A)</option>
+                        <option value="2">Consumidor Final (Factura B/C)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="tipoMonedaId">Moneda de Emisión</label>
+                    <select id="tipoMonedaId" required>
+                        <option value="1">ARS - Pesos Argentinos</option>
+                        <option value="2">USD - Dólares</option>
+                    </select>
+                </div>
+            </div>
+
+            <h3>Detalles de la Factura (Ítems)</h3>
+            <div class="form-grid items-grid">
+                <div class="form-group">
+                    <label>Seleccione Artículo (Explorer)</label>
+                    <div class="input-group-modal">
+                        <input type="hidden" id="articuloIdSelected">
+                        <input type="hidden" id="articuloPrecioSelected">
+                        <input type="text" id="articuloNombreSelected" placeholder="Haga clic en buscar..." readonly>
+                        <button type="button" id="btnAbrirModalArticulo" class="btn-primary">🔍 Buscar</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="cantidad">Cantidad</label>
+                    <input type="number" id="cantidad" min="1" value="1">
+                </div>
+                <div class="form-group align-bottom">
+                    <button type="button" id="btnAgregarItem" class="btn-secondary">Agregar Ítem</button>
+                </div>
+            </div>
+
+            <table id="tablaDetalles" class="modern-table">
+                <thead>
+                <tr>
+                    <th>Ítem / Artículo</th>
+                    <th>Cantidad</th>
+                    <th>Precio Unit.</th>
+                    <th>Subtotal</th>
+                    <th>Acción</th>
+                </tr>
+                </thead>
+                <tbody>
+                <!-- Ítems dinámicos -->
+                </tbody>
+            </table>
+
+            <div class="totals">
+                <p>Subtotal: $<span id="importeSubtotal">0.00</span></p>
+                <p>Total a Cobrar: $<span id="importeTotal">0.00</span></p>
+            </div>
+
+            <button type="submit" id="btnGuardarFactura" class="btn-success">Emitir y Guardar Factura</button>
+        </form>
+    </section>
+
+    <!-- Grilla de Comprobantes Registrados -->
+    <section class="records-section card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h2>Comprobantes Registrados</h2>
+            <div style="display: flex; gap: 10px;">
+                <button id="btnExportarPdf" class="btn-secondary">📄 Exportar PDF</button>
+                <button id="btnExportarExcel" class="btn-secondary">📊 Exportar Excel</button>
+            </div>
+        </div>
+
+        <table id="tablaFacturas" class="modern-table">
+            <thead>
+            <tr>
+                <th>Número</th>
+                <th>Fecha Emisión</th>
+                <th>Estado</th>
+                <th>Total</th>
+                <th>Estado ARCA</th>
+                <th>Acciones</th>
+            </tr>
+            </thead>
+            <tbody>
+            <!-- Facturas cargadas dinámicamente -->
+            </tbody>
+        </table>
+
+        <!-- Paginación de la Grilla -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+            <button id="btnPrevPage" class="btn-primary" disabled>◀ Anterior</button>
+            <span id="pageInfo">Página 1</span>
+            <button id="btnNextPage" class="btn-primary">Siguiente ▶</button>
+        </div>
+    </section>
+</div>
+
+<!-- ==============================================
+     VENTANAS MODALES (EXPLORER) - REQUISITO CÁTEDRA
+     ============================================== -->
+<!-- Modal Cliente -->
+<div id="modalCliente" class="modal-overlay">
+    <div class="modal-content">
+        <span class="close-modal" id="closeModalCliente">&times;</span>
+        <h3 style="margin-top: 0;">Explorer: Búsqueda de Clientes</h3>
+        <input type="text" id="searchClienteModal" placeholder="Filtrar por nombre o CUIT..." style="width: 100%; margin-bottom: 15px;">
+        <table class="modern-table">
+            <thead><tr><th>ID</th><th>CUIT</th><th>Denominación</th><th>Acción</th></tr></thead>
+            <tbody id="tbodyClientesModal">
+            <!-- Por ahora hardcodeado, luego lo conectaremos al backend -->
+            <tr>
+                <td>1</td><td>27-12345678-9</td><td>Cliente Final</td>
+                <td><button type="button" class="btn-secondary btn-seleccionar-cliente" data-id="1" data-nombre="Cliente Final (27-12345678-9)">Elegir</button></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Artículo -->
+<div id="modalArticulo" class="modal-overlay">
+    <div class="modal-content">
+        <span class="close-modal" id="closeModalArticulo">&times;</span>
+        <h3 style="margin-top: 0;">Explorer: Catálogo de Artículos</h3>
+        <input type="text" id="searchArticuloModal" placeholder="Filtrar por nombre o lista..." style="width: 100%; margin-bottom: 15px;">
+        <table class="modern-table">
+            <thead><tr><th>Lista</th><th>Artículo</th><th>Precio</th><th>Acción</th></tr></thead>
+            <tbody id="tbodyArticulosModal">
+            <!-- Se llenará dinámicamente con TypeScript -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
