@@ -27,16 +27,19 @@ public class FacturaService {
     private final CondicionIvaRepository condicionIvaRepository;
     private final TipoMonedaRepository tipoMonedaRepository;
     private final ListaPrecioArticuloRepository listaPrecioArticuloRepository;
+    private final ResourceLoader resourceLoader;
 
     public FacturaService(FacturaVentaRepository facturaRepository, PuntoVentaRepository puntoVentaRepository,
                           ClienteRepository clienteRepository, CondicionIvaRepository condicionIvaRepository,
-                          TipoMonedaRepository tipoMonedaRepository, ListaPrecioArticuloRepository listaPrecioArticuloRepository) {
+                          TipoMonedaRepository tipoMonedaRepository, ListaPrecioArticuloRepository listaPrecioArticuloRepository,
+                          ResourceLoader resourceLoader) {
         this.facturaRepository = facturaRepository;
         this.puntoVentaRepository = puntoVentaRepository;
         this.clienteRepository = clienteRepository;
         this.condicionIvaRepository = condicionIvaRepository;
         this.tipoMonedaRepository = tipoMonedaRepository;
         this.listaPrecioArticuloRepository = listaPrecioArticuloRepository;
+        this.resourceLoader = resourceLoader;
     }
 
     @Transactional
@@ -228,9 +231,6 @@ public class FacturaService {
         }
     }
 
-    @Autowired
-    private ResourceLoader resourceLoader;
-
     @Transactional
     public FacturaVenta informarArca(Long id) {
         FacturaVenta factura = facturaRepository.findById(id)
@@ -241,13 +241,22 @@ public class FacturaService {
         }
 
         try {
-            // Obtenemos la ruta absoluta dinámica en tiempo de ejecución
-            String keyPath = resourceLoader.getResource("classpath:privada_test.key")
-                                           .getFile()
-                                           .getAbsolutePath();
-            String certPath = resourceLoader.getResource("classpath:certificado_test.crt")
-                                            .getFile()
-                                            .getAbsolutePath();
+            // 1. Extraemos los recursos comprimidos como flujos de datos (InputStream)
+            java.io.InputStream keyStream = resourceLoader.getResource("classpath:privada_test.key").getInputStream();
+            java.io.InputStream certStream = resourceLoader.getResource("classpath:certificado_test.crt").getInputStream();
+
+            // 2. Creamos copias físicas temporales invisibles que se autodestruyen al cerrar el sistema
+            java.io.File tempKeyFile = java.io.File.createTempFile("privada", ".key");
+            tempKeyFile.deleteOnExit();
+            java.nio.file.Files.copy(keyStream, tempKeyFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
+            java.io.File tempCertFile = java.io.File.createTempFile("certificado", ".crt");
+            tempCertFile.deleteOnExit();
+            java.nio.file.Files.copy(certStream, tempCertFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
+            // 3. Obtenemos las rutas absolutas de los archivos temporales de forma 100% segura
+            String keyPath = tempKeyFile.getAbsolutePath();
+            String certPath = tempCertFile.getAbsolutePath();
 
             String cuit = "23405971674";
             int puntoDeVenta = 1;
