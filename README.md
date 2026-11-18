@@ -19,16 +19,8 @@ Repositorio oficial del grupo para la cursada de la materia **Desarrollo de Soft
 
 El repositorio está organizado por directorios correspondientes a cada trabajo práctico o módulo de la cursada:
 
-- [ ] 01 - HTML
-- [ ] 02 - CSS
-- [ ] 03 - JavaScript
-- [ ] 04 - TypeScript
 - [x] [05 - To String, Equals y Hashcode](./ToString-Equal-HashCode-Colecciones)
-- [ ] 06 - Lombok y DTO
-- [ ] 07 - Programación Funcional
 - [x] [08 - JPA](./JPA-ORM-Hibernate)
 - [x] [09 - JPQL](./JPQL-Consultas)
 - [x] [10 - Fundamentos Spring Boot](./Spring-Boot)
-- [ ] 11 - APIs REST Spring Boot
-- [ ] 12 - POO
-- [ ] 13 - FastAPI
+- [x] [Sistema de Facturación](./Sistema-Facturacion)
