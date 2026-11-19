@@ -192,21 +192,41 @@
     </div>
 </div>
 
-<!-- Modal Artículo -->
+<!-- Modal Artículo Mejorado -->
 <div id="modalArticulo" class="modal-overlay">
     <div class="modal-content">
         <span class="close-modal" id="closeModalArticulo">&times;</span>
         <h3 style="margin-top: 0;">Explorer: Catálogo de Artículos</h3>
-        <input type="text" id="searchArticuloModal" placeholder="Filtrar por nombre o lista..." style="width: 100%; margin-bottom: 15px;">
+
+        <div class="explorer-toolbar">
+            <div class="filter-tabs" id="tabsListaArticulos">
+                <button type="button" class="tab-btn active" data-lista="TODAS">Todos</button>
+                <button type="button" class="tab-btn" data-lista="Lista Minorista">Minorista</button>
+                <button type="button" class="tab-btn" data-lista="Lista Mayorista">Mayorista</button>
+            </div>
+            <input type="text" id="searchArticuloModal" placeholder="🔍 Escriba para buscar por nombre de producto..." style="width: 100%; box-sizing: border-box;">
+        </div>
+
         <table class="modern-table">
-            <thead><tr><th>Lista</th><th>Artículo</th><th>Precio</th><th>Acción</th></tr></thead>
+            <thead>
+            <tr>
+                <th>Lista de Precio</th>
+                <th>Artículo</th>
+                <th>Precio Unit.</th>
+                <th style="text-align: center;">Acción</th>
+            </tr>
+            </thead>
             <tbody id="tbodyArticulosModal">
             <!-- Se llenará dinámicamente con TypeScript -->
             </tbody>
         </table>
+
+        <div class="explorer-footer">
+            <span id="contadorArticulosModal">Mostrando 0 artículos</span>
+        </div>
     </div>
 </div>
 
-<script type="module" src="app.js"></script>
+<script type="module" src="app.js?v=3"></script>
 </body>
 </html>

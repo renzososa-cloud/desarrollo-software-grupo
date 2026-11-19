@@ -12,6 +12,8 @@ interface DetalleUI extends FacturaDetalleRequestDTO {
 let detallesFactura: DetalleUI[] = [];
 let todasLasFacturas: FacturaReporteDTO[] = [];
 let filtrosActuales: FiltrosBusqueda = {};
+let catalogoCompleto: ArticuloCatalogoDTO[] = [];
+let filtroListaActiva: string = 'TODAS';
 
 let paginaActual = 0;
 let totalPaginas = 1;
@@ -45,17 +47,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     const modalArticulo = document.getElementById('modalArticulo') as HTMLElement;
 
     document.getElementById('btnAbrirModalCliente')?.addEventListener('click', () => {
-        if(modalCliente) modalCliente.style.display = 'flex';
+        if (modalCliente) modalCliente.style.display = 'flex';
     });
+
     document.getElementById('btnAbrirModalArticulo')?.addEventListener('click', () => {
-        if(modalArticulo) modalArticulo.style.display = 'flex';
+        const inputSearch = document.getElementById('searchArticuloModal') as HTMLInputElement;
+        if (inputSearch) inputSearch.value = '';
+        filtrarYRenderizarCatalogo();
+        if (modalArticulo) {
+            modalArticulo.style.display = 'flex';
+            inputSearch?.focus();
+        }
     });
 
     document.getElementById('closeModalCliente')?.addEventListener('click', () => {
-        if(modalCliente) modalCliente.style.display = 'none';
+        if (modalCliente) modalCliente.style.display = 'none';
     });
     document.getElementById('closeModalArticulo')?.addEventListener('click', () => {
-        if(modalArticulo) modalArticulo.style.display = 'none';
+        if (modalArticulo) modalArticulo.style.display = 'none';
     });
 
     window.addEventListener('click', (e) => {
@@ -63,12 +72,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (modalArticulo && e.target === modalArticulo) modalArticulo.style.display = 'none';
     });
 
-    document.getElementById('searchArticuloModal')?.addEventListener('input', (e) => {
-        const term = (e.target as HTMLInputElement).value.toLowerCase();
-        const rows = document.querySelectorAll('#tbodyArticulosModal tr');
-        rows.forEach(row => {
-            const text = row.textContent?.toLowerCase() || '';
-            (row as HTMLElement).style.display = text.includes(term) ? '' : 'none';
+    document.getElementById('searchArticuloModal')?.addEventListener('input', () => {
+        filtrarYRenderizarCatalogo();
+    });
+
+    document.querySelectorAll('#tabsListaArticulos .tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('#tabsListaArticulos .tab-btn').forEach(b => b.classList.remove('active'));
+            const target = e.currentTarget as HTMLButtonElement;
+            target.classList.add('active');
+
+            filtroListaActiva = target.getAttribute('data-lista') || 'TODAS';
+            filtrarYRenderizarCatalogo();
         });
     });
 
@@ -119,46 +134,67 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function cargarCatalogo() {
-    const tbodyArticulos = document.getElementById('tbodyArticulosModal');
-    const catalogo = await facturaService.obtenerCatalogo();
+    catalogoCompleto = await facturaService.obtenerCatalogo();
+    filtrarYRenderizarCatalogo();
+}
 
-    if (!tbodyArticulos || !catalogo || catalogo.length === 0) return;
+function filtrarYRenderizarCatalogo() {
+    const tbodyArticulos = document.getElementById('tbodyArticulosModal');
+    const contadorSpan = document.getElementById('contadorArticulosModal');
+    const inputSearch = document.getElementById('searchArticuloModal') as HTMLInputElement;
+    const termino = inputSearch ? inputSearch.value.toLowerCase().trim() : '';
+
+    if (!tbodyArticulos) return;
+
+    const filtrados = catalogoCompleto.filter((art: ArticuloCatalogoDTO) => {
+        const coincideLista = filtroListaActiva === 'TODAS' || art.listaNombre === filtroListaActiva;
+        const coincideTexto = art.articuloNombre.toLowerCase().includes(termino) ||
+            art.listaNombre.toLowerCase().includes(termino);
+        return coincideLista && coincideTexto;
+    });
 
     tbodyArticulos.innerHTML = '';
 
-    catalogo.forEach((art: ArticuloCatalogoDTO) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><strong>${art.listaNombre}</strong></td>
-            <td>${art.articuloNombre}</td>
-            <td>$${art.precioVenta.toFixed(2)}</td>
-            <td>
-                <button type="button" class="btn-secondary btn-seleccionar-articulo" 
-                    data-id="${art.id}" 
-                    data-nombre="${art.articuloNombre}" 
-                    data-precio="${art.precioVenta}">
-                    Elegir
-                </button>
-            </td>
-        `;
-        tbodyArticulos.appendChild(tr);
-    });
+    if (filtrados.length === 0) {
+        tbodyArticulos.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;">No se encontraron artículos con ese criterio.</td></tr>`;
+    } else {
+        filtrados.forEach((art: ArticuloCatalogoDTO) => {
+            const esMayorista = art.listaNombre.toLowerCase().includes('mayorista');
+            const badgeClass = esMayorista ? 'badge-mayorista' : 'badge-minorista';
 
-    document.querySelectorAll('.btn-seleccionar-articulo').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const target = e.currentTarget as HTMLButtonElement;
-            const id = target.getAttribute('data-id');
-            const nombre = target.getAttribute('data-nombre');
-            const precio = target.getAttribute('data-precio');
+            const tr = document.createElement('tr');
+            tr.className = 'explorer-row';
+            tr.title = 'Doble clic para seleccionar rápidamente';
+            tr.innerHTML = `
+                <td><span class="badge-lista ${badgeClass}">${art.listaNombre}</span></td>
+                <td><strong>${art.articuloNombre}</strong></td>
+                <td>$${art.precioVenta.toFixed(2)}</td>
+                <td style="text-align: center;">
+                    <button type="button" class="btn-primary" style="padding: 5px 12px; font-size: 0.85em;">
+                        Elegir
+                    </button>
+                </td>
+            `;
 
-            (document.getElementById('articuloIdSelected') as HTMLInputElement).value = id || '';
-            (document.getElementById('articuloNombreSelected') as HTMLInputElement).value = nombre || '';
-            (document.getElementById('articuloPrecioSelected') as HTMLInputElement).value = precio || '';
+            const seleccionarEsteArticulo = () => {
+                (document.getElementById('articuloIdSelected') as HTMLInputElement).value = art.id.toString();
+                (document.getElementById('articuloNombreSelected') as HTMLInputElement).value = `${art.articuloNombre} (${art.listaNombre})`;
+                (document.getElementById('articuloPrecioSelected') as HTMLInputElement).value = art.precioVenta.toString();
 
-            const modalArticulo = document.getElementById('modalArticulo');
-            if(modalArticulo) modalArticulo.style.display = 'none';
+                const modalArticulo = document.getElementById('modalArticulo');
+                if (modalArticulo) modalArticulo.style.display = 'none';
+            };
+
+            tr.querySelector('button')?.addEventListener('click', seleccionarEsteArticulo);
+            tr.addEventListener('dblclick', seleccionarEsteArticulo);
+
+            tbodyArticulos.appendChild(tr);
         });
-    });
+    }
+
+    if (contadorSpan) {
+        contadorSpan.textContent = `Mostrando ${filtrados.length} de ${catalogoCompleto.length} artículos`;
+    }
 }
 
 async function cargarClientes() {
@@ -196,7 +232,7 @@ async function cargarClientes() {
             (document.getElementById('clienteNombre') as HTMLInputElement).value = nombre || '';
 
             const modalCliente = document.getElementById('modalCliente');
-            if(modalCliente) modalCliente.style.display = 'none';
+            if (modalCliente) modalCliente.style.display = 'none';
         });
     });
 }
@@ -212,8 +248,8 @@ async function cargarFacturas() {
 
 async function cambiarPagina(delta: number) {
     paginaActual += delta;
-    if (paginaActual < 0) paginaActual = 0;
     if (paginaActual >= totalPaginas) paginaActual = totalPaginas - 1;
+    if (paginaActual < 0) paginaActual = 0;
     await cargarFacturas();
 }
 
@@ -267,7 +303,6 @@ function renderizarTablaFacturas(facturas: FacturaReporteDTO[]) {
                                 ${esAnulada ? 'disabled style="background-color: grey;"' : ''}>
                             Anular
                         </button>
-                        <!-- NUEVO BOTÓN PARA IMPRIMIR PDF DE LA FACTURA ESPECÍFICA -->
                         <button class="btn-secondary" style="padding: 5px; font-size: 0.8em; margin-left: 5px;" 
                                 onclick="imprimirFactura(${f.id})"
                                 ${!informadaArca ? 'disabled style="background-color: grey;"' : ''}>
@@ -280,16 +315,15 @@ function renderizarTablaFacturas(facturas: FacturaReporteDTO[]) {
     }
 }
 
-// NUEVA FUNCIÓN GLOBAL PARA ABRIR EL PDF
 export const imprimirFactura = (id: number) => {
     window.open(`http://localhost:8080/api/facturas/${id}/pdf`, '_blank');
 };
 (window as any).imprimirFactura = imprimirFactura;
 
 export const informarArca = async (id: number) => {
-    if(confirm('¿Desea informar esta factura a ARCA? Esta acción no se puede deshacer.')) {
+    if (confirm('¿Desea informar esta factura a ARCA? Esta acción no se puede deshacer.')) {
         const exito = await facturaService.informarArca(id);
-        if(exito) {
+        if (exito) {
             alert('Factura informada con éxito. CAE generado.');
             await cargarFacturas();
         } else {
@@ -300,9 +334,9 @@ export const informarArca = async (id: number) => {
 (window as any).informarArca = informarArca;
 
 export const eliminarComprobante = async (id: number) => {
-    if(confirm('¿Está seguro que desea anular esta factura?')) {
+    if (confirm('¿Está seguro que desea anular esta factura?')) {
         const exito = await facturaService.eliminarFactura(id);
-        if(exito) {
+        if (exito) {
             alert('Factura anulada/eliminada correctamente.');
             await cargarFacturas();
         } else {
@@ -327,6 +361,14 @@ function agregarDetalle() {
     const articuloNombre = inputNombre.value;
     const precioUnitarioUI = parseFloat(inputPrecio.value);
     const cantidad = parseInt(inputCantidad.value);
+
+    // Validación de cantidad positiva
+    if (isNaN(cantidad) || cantidad <= 0) {
+        alert('La cantidad debe ser un número mayor a 0.');
+        inputCantidad.value = '1';
+        inputCantidad.focus();
+        return;
+    }
 
     const subtotalUI = cantidad * precioUnitarioUI;
 

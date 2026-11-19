@@ -12,6 +12,8 @@ const facturaService = new FacturaService();
 let detallesFactura = [];
 let todasLasFacturas = [];
 let filtrosActuales = {};
+let catalogoCompleto = [];
+let filtroListaActiva = 'TODAS';
 let paginaActual = 0;
 let totalPaginas = 1;
 document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, void 0, function* () {
@@ -43,8 +45,14 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
             modalCliente.style.display = 'flex';
     });
     (_b = document.getElementById('btnAbrirModalArticulo')) === null || _b === void 0 ? void 0 : _b.addEventListener('click', () => {
-        if (modalArticulo)
+        const inputSearch = document.getElementById('searchArticuloModal');
+        if (inputSearch)
+            inputSearch.value = '';
+        filtrarYRenderizarCatalogo();
+        if (modalArticulo) {
             modalArticulo.style.display = 'flex';
+            inputSearch === null || inputSearch === void 0 ? void 0 : inputSearch.focus();
+        }
     });
     (_c = document.getElementById('closeModalCliente')) === null || _c === void 0 ? void 0 : _c.addEventListener('click', () => {
         if (modalCliente)
@@ -60,13 +68,16 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
         if (modalArticulo && e.target === modalArticulo)
             modalArticulo.style.display = 'none';
     });
-    (_e = document.getElementById('searchArticuloModal')) === null || _e === void 0 ? void 0 : _e.addEventListener('input', (e) => {
-        const term = e.target.value.toLowerCase();
-        const rows = document.querySelectorAll('#tbodyArticulosModal tr');
-        rows.forEach(row => {
-            var _a;
-            const text = ((_a = row.textContent) === null || _a === void 0 ? void 0 : _a.toLowerCase()) || '';
-            row.style.display = text.includes(term) ? '' : 'none';
+    (_e = document.getElementById('searchArticuloModal')) === null || _e === void 0 ? void 0 : _e.addEventListener('input', () => {
+        filtrarYRenderizarCatalogo();
+    });
+    document.querySelectorAll('#tabsListaArticulos .tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('#tabsListaArticulos .tab-btn').forEach(b => b.classList.remove('active'));
+            const target = e.currentTarget;
+            target.classList.add('active');
+            filtroListaActiva = target.getAttribute('data-lista') || 'TODAS';
+            filtrarYRenderizarCatalogo();
         });
     });
     (_f = document.getElementById('searchClienteModal')) === null || _f === void 0 ? void 0 : _f.addEventListener('input', (e) => {
@@ -111,43 +122,61 @@ document.addEventListener('DOMContentLoaded', () => __awaiter(void 0, void 0, vo
 }));
 function cargarCatalogo() {
     return __awaiter(this, void 0, void 0, function* () {
-        const tbodyArticulos = document.getElementById('tbodyArticulosModal');
-        const catalogo = yield facturaService.obtenerCatalogo();
-        if (!tbodyArticulos || !catalogo || catalogo.length === 0)
-            return;
-        tbodyArticulos.innerHTML = '';
-        catalogo.forEach((art) => {
+        catalogoCompleto = yield facturaService.obtenerCatalogo();
+        filtrarYRenderizarCatalogo();
+    });
+}
+function filtrarYRenderizarCatalogo() {
+    const tbodyArticulos = document.getElementById('tbodyArticulosModal');
+    const contadorSpan = document.getElementById('contadorArticulosModal');
+    const inputSearch = document.getElementById('searchArticuloModal');
+    const termino = inputSearch ? inputSearch.value.toLowerCase().trim() : '';
+    if (!tbodyArticulos)
+        return;
+    const filtrados = catalogoCompleto.filter((art) => {
+        const coincideLista = filtroListaActiva === 'TODAS' || art.listaNombre === filtroListaActiva;
+        const coincideTexto = art.articuloNombre.toLowerCase().includes(termino) ||
+            art.listaNombre.toLowerCase().includes(termino);
+        return coincideLista && coincideTexto;
+    });
+    tbodyArticulos.innerHTML = '';
+    if (filtrados.length === 0) {
+        tbodyArticulos.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;">No se encontraron artículos con ese criterio.</td></tr>`;
+    }
+    else {
+        filtrados.forEach((art) => {
+            var _a;
+            const esMayorista = art.listaNombre.toLowerCase().includes('mayorista');
+            const badgeClass = esMayorista ? 'badge-mayorista' : 'badge-minorista';
             const tr = document.createElement('tr');
+            tr.className = 'explorer-row';
+            tr.title = 'Doble clic para seleccionar rápidamente';
             tr.innerHTML = `
-            <td><strong>${art.listaNombre}</strong></td>
-            <td>${art.articuloNombre}</td>
-            <td>$${art.precioVenta.toFixed(2)}</td>
-            <td>
-                <button type="button" class="btn-secondary btn-seleccionar-articulo" 
-                    data-id="${art.id}" 
-                    data-nombre="${art.articuloNombre}" 
-                    data-precio="${art.precioVenta}">
-                    Elegir
-                </button>
-            </td>
-        `;
-            tbodyArticulos.appendChild(tr);
-        });
-        document.querySelectorAll('.btn-seleccionar-articulo').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const target = e.currentTarget;
-                const id = target.getAttribute('data-id');
-                const nombre = target.getAttribute('data-nombre');
-                const precio = target.getAttribute('data-precio');
-                document.getElementById('articuloIdSelected').value = id || '';
-                document.getElementById('articuloNombreSelected').value = nombre || '';
-                document.getElementById('articuloPrecioSelected').value = precio || '';
+                <td><span class="badge-lista ${badgeClass}">${art.listaNombre}</span></td>
+                <td><strong>${art.articuloNombre}</strong></td>
+                <td>$${art.precioVenta.toFixed(2)}</td>
+                <td style="text-align: center;">
+                    <button type="button" class="btn-primary" style="padding: 5px 12px; font-size: 0.85em;">
+                        Elegir
+                    </button>
+                </td>
+            `;
+            const seleccionarEsteArticulo = () => {
+                document.getElementById('articuloIdSelected').value = art.id.toString();
+                document.getElementById('articuloNombreSelected').value = `${art.articuloNombre} (${art.listaNombre})`;
+                document.getElementById('articuloPrecioSelected').value = art.precioVenta.toString();
                 const modalArticulo = document.getElementById('modalArticulo');
                 if (modalArticulo)
                     modalArticulo.style.display = 'none';
-            });
+            };
+            (_a = tr.querySelector('button')) === null || _a === void 0 ? void 0 : _a.addEventListener('click', seleccionarEsteArticulo);
+            tr.addEventListener('dblclick', seleccionarEsteArticulo);
+            tbodyArticulos.appendChild(tr);
         });
-    });
+    }
+    if (contadorSpan) {
+        contadorSpan.textContent = `Mostrando ${filtrados.length} de ${catalogoCompleto.length} artículos`;
+    }
 }
 function cargarClientes() {
     return __awaiter(this, void 0, void 0, function* () {
@@ -198,10 +227,10 @@ function cargarFacturas() {
 function cambiarPagina(delta) {
     return __awaiter(this, void 0, void 0, function* () {
         paginaActual += delta;
-        if (paginaActual < 0)
-            paginaActual = 0;
         if (paginaActual >= totalPaginas)
             paginaActual = totalPaginas - 1;
+        if (paginaActual < 0)
+            paginaActual = 0;
         yield cargarFacturas();
     });
 }
@@ -254,7 +283,6 @@ function renderizarTablaFacturas(facturas) {
                                 ${esAnulada ? 'disabled style="background-color: grey;"' : ''}>
                             Anular
                         </button>
-                        <!-- NUEVO BOTÓN PARA IMPRIMIR PDF DE LA FACTURA ESPECÍFICA -->
                         <button class="btn-secondary" style="padding: 5px; font-size: 0.8em; margin-left: 5px;" 
                                 onclick="imprimirFactura(${f.id})"
                                 ${!informadaArca ? 'disabled style="background-color: grey;"' : ''}>
@@ -266,7 +294,6 @@ function renderizarTablaFacturas(facturas) {
         });
     }
 }
-// NUEVA FUNCIÓN GLOBAL PARA ABRIR EL PDF
 export const imprimirFactura = (id) => {
     window.open(`http://localhost:8080/api/facturas/${id}/pdf`, '_blank');
 };
@@ -310,6 +337,13 @@ function agregarDetalle() {
     const articuloNombre = inputNombre.value;
     const precioUnitarioUI = parseFloat(inputPrecio.value);
     const cantidad = parseInt(inputCantidad.value);
+    // Validación de cantidad positiva
+    if (isNaN(cantidad) || cantidad <= 0) {
+        alert('La cantidad debe ser un número mayor a 0.');
+        inputCantidad.value = '1';
+        inputCantidad.focus();
+        return;
+    }
     const subtotalUI = cantidad * precioUnitarioUI;
     detallesFactura.push({
         articuloId,

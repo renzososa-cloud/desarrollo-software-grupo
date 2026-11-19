@@ -322,3 +322,73 @@ button {
     white-space: nowrap;
     overflow: hidden;
 }
+
+/* =========================================
+   MEJORAS EXPLORER DE ARTÍCULOS
+========================================= */
+.explorer-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.filter-tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.tab-btn {
+    background-color: var(--secondary);
+    color: var(--secondary-text);
+    border: 1px solid var(--border-color);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tab-btn:hover {
+    background-color: var(--secondary-hover);
+}
+
+.tab-btn.active {
+    background-color: var(--primary);
+    color: #ffffff;
+    border-color: var(--primary);
+}
+
+.badge-lista {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.badge-minorista {
+    background-color: rgba(0, 159, 227, 0.15);
+    color: #009FE3;
+    border: 1px solid rgba(0, 159, 227, 0.3);
+}
+
+.badge-mayorista {
+    background-color: rgba(40, 167, 69, 0.15);
+    color: #28a745;
+    border: 1px solid rgba(40, 167, 69, 0.3);
+}
+
+.explorer-row {
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.explorer-footer {
+    margin-top: 10px;
+    font-size: 0.85em;
+    color: var(--text-muted);
+    text-align: right;
+}

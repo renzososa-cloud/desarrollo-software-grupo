@@ -7,13 +7,17 @@ import ar.edu.utn.excepciones.RecursoNoEncontradoException;
 import ar.edu.utn.modelo.*;
 import ar.edu.utn.repositorio.*;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.File;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -44,6 +48,10 @@ public class FacturaService {
 
     @Transactional
     public FacturaVenta crear(FacturaRequestDTO requestDTO) {
+        if (requestDTO.getDetalles() == null || requestDTO.getDetalles().isEmpty()) {
+            throw new IllegalArgumentException("La factura debe contener al menos un ítem.");
+        }
+
         PuntoVenta puntoVenta = puntoVentaRepository.findById(requestDTO.getPuntoVentaId())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Punto de venta no encontrado con ID: " + requestDTO.getPuntoVentaId()));
 
@@ -80,33 +88,9 @@ public class FacturaService {
         double importeTotalFactura = 0.0;
 
         for (FacturaDetalleRequestDTO itemDTO : requestDTO.getDetalles()) {
-            ListaPrecioArticulo precioArticulo = listaPrecioArticuloRepository.findById(itemDTO.getArticuloId())
-                    .orElseThrow(() -> new RecursoNoEncontradoException("Artículo/Precio no encontrado para el ID: " + itemDTO.getArticuloId()));
-
-            FacturaVentaDetalle detalle = new FacturaVentaDetalle();
-            detalle.setFactura(factura);
-            detalle.setListaPrecioArticulo(precioArticulo);
-            detalle.setDescripcion(precioArticulo.getArticulo().getDenominacion());
-            detalle.setCantidad(itemDTO.getCantidad());
-            detalle.setPrecioUnitario(precioArticulo.getPrecioVenta());
-            detalle.setPorcentajeBonificacion(itemDTO.getPorcentajeBonificacion());
-
-            double precioLista = precioArticulo.getPrecioVenta(); // Ej: 900.00 (Ya incluye IVA)
-
-            // El subtotal real del ítem es la cantidad por el precio de lista
-            double importeSubtotal = itemDTO.getCantidad() * precioLista;
-
-            // Desglosamos el Neto y el IVA hacia atrás para que la factura cierre perfecta
-            double importeNeto = importeSubtotal / 1.21;
-            double importeIva = importeSubtotal - importeNeto;
-
-            detalle.setPrecioUnitario(precioLista);
-            detalle.setImporteNeto(importeNeto);
-            detalle.setImporteIva(importeIva);
-            detalle.setImporteSubtotal(importeSubtotal);
-
+            FacturaVentaDetalle detalle = crearDetalleDesdeDTO(factura, itemDTO);
             detalles.add(detalle);
-            importeTotalFactura += importeSubtotal;
+            importeTotalFactura += detalle.getImporteSubtotal();
         }
 
         factura.setDetalles(detalles);
@@ -130,6 +114,10 @@ public class FacturaService {
             throw new IllegalStateException("Bloqueo ARCA: No se puede modificar una factura que ya fue informada a AFIP.");
         }
 
+        if (requestDTO.getDetalles() == null || requestDTO.getDetalles().isEmpty()) {
+            throw new IllegalArgumentException("La factura debe contener al menos un ítem.");
+        }
+
         if (requestDTO.getPuntoVentaId() != null) {
             PuntoVenta puntoVenta = puntoVentaRepository.findById(requestDTO.getPuntoVentaId())
                     .orElseThrow(() -> new RecursoNoEncontradoException("Punto de venta no encontrado con ID: " + requestDTO.getPuntoVentaId()));
@@ -151,39 +139,42 @@ public class FacturaService {
         double nuevoImporteTotal = 0;
 
         for (FacturaDetalleRequestDTO itemDTO : requestDTO.getDetalles()) {
-            ListaPrecioArticulo precioArticulo = listaPrecioArticuloRepository.findById(itemDTO.getArticuloId())
-                    .orElseThrow(() -> new RecursoNoEncontradoException("Artículo/Precio no encontrado para el ID: " + itemDTO.getArticuloId()));
-
-            FacturaVentaDetalle detalle = new FacturaVentaDetalle();
-            detalle.setFactura(facturaExistente);
-            detalle.setListaPrecioArticulo(precioArticulo);
-            detalle.setDescripcion(precioArticulo.getArticulo().getDenominacion());
-            detalle.setCantidad(itemDTO.getCantidad());
-            detalle.setPrecioUnitario(precioArticulo.getPrecioVenta());
-            detalle.setPorcentajeBonificacion(itemDTO.getPorcentajeBonificacion());
-
-            double precioLista = precioArticulo.getPrecioVenta(); // Ej: 900.00 (Ya incluye IVA)
-
-            // El subtotal real del ítem es la cantidad por el precio de lista
-            double importeSubtotal = itemDTO.getCantidad() * precioLista;
-
-            // Desglosamos el Neto y el IVA hacia atrás para que la factura cierre perfecta
-            double importeNeto = importeSubtotal / 1.21;
-            double importeIva = importeSubtotal - importeNeto;
-
-            detalle.setPrecioUnitario(precioLista);
-            detalle.setImporteNeto(importeNeto);
-            detalle.setImporteIva(importeIva);
-            detalle.setImporteSubtotal(importeSubtotal);
-
+            FacturaVentaDetalle detalle = crearDetalleDesdeDTO(facturaExistente, itemDTO);
             facturaExistente.getDetalles().add(detalle);
-            nuevoImporteTotal += importeSubtotal;
+            nuevoImporteTotal += detalle.getImporteSubtotal();
         }
 
         facturaExistente.setImporteTotal(nuevoImporteTotal);
         facturaExistente.setImporteSaldo(nuevoImporteTotal - facturaExistente.getImporteCobrado());
 
         return facturaRepository.save(facturaExistente);
+    }
+
+    private FacturaVentaDetalle crearDetalleDesdeDTO(FacturaVenta factura, FacturaDetalleRequestDTO itemDTO) {
+        if (itemDTO.getCantidad() <= 0) {
+            throw new IllegalArgumentException("La cantidad de cada ítem debe ser mayor a cero.");
+        }
+
+        ListaPrecioArticulo precioArticulo = listaPrecioArticuloRepository.findById(itemDTO.getArticuloId())
+                .orElseThrow(() -> new RecursoNoEncontradoException("Artículo/Precio no encontrado para el ID: " + itemDTO.getArticuloId()));
+
+        double precioLista = precioArticulo.getPrecioVenta();
+        double importeSubtotal = itemDTO.getCantidad() * precioLista;
+        double importeNeto = importeSubtotal / 1.21;
+        double importeIva = importeSubtotal - importeNeto;
+
+        FacturaVentaDetalle detalle = new FacturaVentaDetalle();
+        detalle.setFactura(factura);
+        detalle.setListaPrecioArticulo(precioArticulo);
+        detalle.setDescripcion(precioArticulo.getArticulo().getDenominacion());
+        detalle.setCantidad(itemDTO.getCantidad());
+        detalle.setPrecioUnitario(precioLista);
+        detalle.setPorcentajeBonificacion(itemDTO.getPorcentajeBonificacion());
+        detalle.setImporteNeto(importeNeto);
+        detalle.setImporteIva(importeIva);
+        detalle.setImporteSubtotal(importeSubtotal);
+
+        return detalle;
     }
 
     @Transactional(readOnly = true)
@@ -240,21 +231,17 @@ public class FacturaService {
             throw new IllegalStateException("La factura ya se encuentra informada a ARCA.");
         }
 
-        try {
-            // 1. Extraemos los recursos comprimidos como flujos de datos (InputStream)
-            java.io.InputStream keyStream = resourceLoader.getResource("classpath:privada_test.key").getInputStream();
-            java.io.InputStream certStream = resourceLoader.getResource("classpath:certificado_test.crt").getInputStream();
+        try (InputStream keyStream = resourceLoader.getResource("classpath:privada_test.key").getInputStream();
+             InputStream certStream = resourceLoader.getResource("classpath:certificado_test.crt").getInputStream()) {
 
-            // 2. Creamos copias físicas temporales invisibles que se autodestruyen al cerrar el sistema
-            java.io.File tempKeyFile = java.io.File.createTempFile("privada", ".key");
+            File tempKeyFile = File.createTempFile("privada", ".key");
             tempKeyFile.deleteOnExit();
-            java.nio.file.Files.copy(keyStream, tempKeyFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(keyStream, tempKeyFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
-            java.io.File tempCertFile = java.io.File.createTempFile("certificado", ".crt");
+            File tempCertFile = File.createTempFile("certificado", ".crt");
             tempCertFile.deleteOnExit();
-            java.nio.file.Files.copy(certStream, tempCertFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(certStream, tempCertFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
-            // 3. Obtenemos las rutas absolutas de los archivos temporales de forma 100% segura
             String keyPath = tempKeyFile.getAbsolutePath();
             String certPath = tempCertFile.getAbsolutePath();
 
@@ -274,11 +261,11 @@ public class FacturaService {
             String resultado = response.getFeCabResp().getResultado();
 
             if ("A".equals(resultado)) {
-                ar.gov.afip.wsfe.FECAEDetResponse detResp = response.getFeDetResp().getFECAEDetResponse().get(0);
+                ar.gov.afip.wsfe.FECAEDetResponse detResp = response.getFeDetResp().getFECAEDetResponse().getFirst();
                 factura.setCae(detResp.getCAE());
 
                 String vtoStr = detResp.getCAEFchVto();
-                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyyMMdd");
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
                 factura.setCaeFechaVencimiento(sdf.parse(vtoStr));
 
                 factura.setNumero((long) nuevoNro);
@@ -286,9 +273,9 @@ public class FacturaService {
             } else {
                 String mensajeError = "Rechazado por AFIP.";
                 if (response.getFeDetResp() != null && !response.getFeDetResp().getFECAEDetResponse().isEmpty()) {
-                    mensajeError = response.getFeDetResp().getFECAEDetResponse().get(0).getObservaciones().getObs().get(0).getMsg();
+                    mensajeError = response.getFeDetResp().getFECAEDetResponse().getFirst().getObservaciones().getObs().getFirst().getMsg();
                 } else if (response.getErrors() != null) {
-                    mensajeError = response.getErrors().getErr().get(0).getMsg();
+                    mensajeError = response.getErrors().getErr().getFirst().getMsg();
                 }
                 factura.setResultadoAfip("RECHAZADO: " + mensajeError);
                 throw new IllegalStateException("AFIP rechazó el comprobante: " + mensajeError);
