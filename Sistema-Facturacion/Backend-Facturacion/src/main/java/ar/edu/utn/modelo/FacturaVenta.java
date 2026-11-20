@@ -1,11 +1,11 @@
 package ar.edu.utn.modelo;
 
-import lombok.*;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
+import lombok.*;
 import java.util.Date;
 import java.util.List;
 
-// Entidad FacturaVenta refactorizada con Lombok
 @Entity
 @Table(name = "factura_venta")
 @Getter
@@ -19,9 +19,8 @@ public class FacturaVenta extends AuditoriaApp {
 
     private Long numero;
 
-    @Column(nullable = false)
-    @Temporal(TemporalType.DATE)
-    @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd", timezone = "America/Argentina/Buenos_Aires")
+    @Temporal(TemporalType.TIMESTAMP)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "America/Argentina/Buenos_Aires")
     private Date fechaEmision;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -29,8 +28,12 @@ public class FacturaVenta extends AuditoriaApp {
     private PuntoVenta puntoVenta;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cliente_id", nullable = true) // Es true porque puede ser Consumidor Final
+    @JoinColumn(name = "cliente_id", nullable = true)
     private Cliente cliente;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "lista_precio_id")
+    private ListaPrecio listaPrecio;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "condicion_iva_id", nullable = false)
@@ -40,11 +43,16 @@ public class FacturaVenta extends AuditoriaApp {
     @JoinColumn(name = "tipo_moneda_id", nullable = false)
     private TipoMoneda tipoMoneda;
 
+    @Column(name = "tipo_comprobante", nullable = false)
+    @Builder.Default
+    private int tipoComprobante = 11;
+
     private double importeCobrado;
     private double importeSaldo;
 
     @Column(nullable = false)
     private double importeTotal;
+
     private String cae;
     private Date caeFechaVencimiento;
     private String resultadoAfip;

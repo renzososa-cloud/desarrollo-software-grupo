@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/catalogo")
-@CrossOrigin(origins = "*") // Permite que tu frontend acceda sin errores de CORS
+@CrossOrigin(origins = "*")
 public class CatalogoController {
 
     private final ListaPrecioArticuloRepository repository;
@@ -24,10 +24,17 @@ public class CatalogoController {
     @GetMapping("/articulos")
     public List<ArticuloCatalogoDTO> obtenerCatalogo() {
         return repository.findAll().stream()
+                .filter(lpa -> lpa.getArticulo() != null && lpa.getArticulo().getFechaBaja() == null)
                 .map(lpa -> new ArticuloCatalogoDTO(
                         lpa.getId(),
+                        lpa.getArticulo().getId(),
+                        lpa.getArticulo().getCodigo(),
                         lpa.getArticulo().getDenominacion(),
+                        lpa.getArticulo().getRubro() != null ? lpa.getArticulo().getRubro().getDenominacion() : "Sin rubro",
+                        lpa.getArticulo().getMarca() != null ? lpa.getArticulo().getMarca().getDenominacion() : "Sin marca",
                         lpa.getPrecioVenta(),
+                        lpa.getListaPrecio().getId(),
+                        lpa.getListaPrecio().getCodigo(),
                         lpa.getListaPrecio().getDenominacion()
                 ))
                 .collect(Collectors.toList());

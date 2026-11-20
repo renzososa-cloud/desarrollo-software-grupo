@@ -3,230 +3,851 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Facturación</title>
+    <title>FacturAR · Gestión Comercial y Facturación Electrónica</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Pacifico&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-<div class="container">
-    <header>
-        <div class="header-title">
-            <h1>Gestión de Facturación</h1>
-            <p>Sistema Integrado de Facturación Electrónica y Autorización Fiscal</p>
+<body class="dark-theme">
+
+<!-- CONTENEDOR DE NOTIFICACIONES TOAST -->
+<div id="toastContainer" class="toast-container"></div>
+
+<div class="app-shell">
+    <!-- ==========================================
+         BARRA LATERAL IZQUIERDA (SIDEBAR)
+    =========================================== -->
+    <aside class="sidebar">
+        <div class="sidebar-top">
+            <div class="brand">
+                <h1 class="brand-title">FacturAR</h1>
+                <span class="brand-sub">Gestión Fiscal · ARCA</span>
+            </div>
+
+            <!-- Bloque 1: FACTURACIÓN -->
+            <div class="nav-section">
+                <span class="nav-section-label">FACTURACIÓN</span>
+                <nav class="nav-list" id="sidebarNav">
+                    <button type="button" class="nav-item active" data-section="SIN_EMITIR">
+                        <span class="nav-icon">🕒</span>
+                        <span class="nav-text">Sin emitir</span>
+                        <span class="nav-dot"></span>
+                    </button>
+                    <button type="button" class="nav-item" data-section="EMITIDA">
+                        <span class="nav-icon">✅</span>
+                        <span class="nav-text">Emitidas</span>
+                        <span class="nav-dot"></span>
+                    </button>
+                    <button type="button" class="nav-item" data-section="ELIMINADAS">
+                        <span class="nav-icon">🗑️</span>
+                        <span class="nav-text">Eliminadas</span>
+                        <span class="nav-dot"></span>
+                    </button>
+
+                    <!-- Bloque 2: OPERACIÓN -->
+                    <span class="nav-section-label nav-section-divider">OPERACIÓN</span>
+
+                    <button type="button" class="nav-item" data-section="CLIENTES">
+                        <span class="nav-icon">👥</span>
+                        <span class="nav-text">Clientes</span>
+                        <span class="nav-dot"></span>
+                    </button>
+
+                    <div class="nav-group">
+                        <button type="button" class="nav-item" data-section="ARTICULOS">
+                            <span class="nav-icon">📦</span>
+                            <span class="nav-text">Artículos</span>
+                            <span class="nav-dot"></span>
+                        </button>
+                        <div class="nav-subitems">
+                            <button type="button" class="nav-item nav-subitem" data-section="MARCAS">
+                                <span class="nav-icon">🏷️</span>
+                                <span class="nav-text">Marcas</span>
+                                <span class="nav-dot"></span>
+                            </button>
+                            <button type="button" class="nav-item nav-subitem" data-section="RUBROS">
+                                <span class="nav-icon">🗂️</span>
+                                <span class="nav-text">Rubros</span>
+                                <span class="nav-dot"></span>
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            </div>
         </div>
-        <button id="themeToggle" aria-label="Cambiar modo oscuro/claro">🌙</button>
-    </header>
 
-    <!-- Buscador Avanzado de Comprobantes con Filtros de Cátedra -->
-    <section class="search-section card">
-        <h2>Buscador de Comprobantes</h2>
-        <div class="form-grid">
-            <div class="form-group">
-                <label for="searchNumero">Nro. Factura</label>
-                <input type="number" id="searchNumero" placeholder="Ej: 1001">
-            </div>
-            <div class="form-group">
-                <label for="searchFechaDesde">Fecha Desde</label>
-                <input type="date" id="searchFechaDesde">
-            </div>
-            <div class="form-group">
-                <label for="searchFechaHasta">Fecha Hasta</label>
-                <input type="date" id="searchFechaHasta">
-            </div>
-            <div class="form-group">
-                <label for="searchCliente">Cliente</label>
-                <input type="text" id="searchCliente" placeholder="Buscar por cliente...">
-            </div>
-            <div class="form-group">
-                <label for="searchEstadoArca">Estado ARCA</label>
-                <select id="searchEstadoArca">
-                    <option value="">Todos</option>
-                    <option value="true">Informadas (Con CAE)</option>
-                    <option value="false">No Informadas</option>
-                </select>
-            </div>
-            <div class="form-group align-bottom">
-                <button id="btnBuscar" type="button" class="btn-primary">Buscar</button>
-            </div>
-        </div>
-    </section>
+        <div class="sidebar-bottom">
+            <button type="button" id="btnNuevaFacturaSidebar" class="btn-new-invoice">
+                <span>+</span> Nueva factura
+            </button>
 
-    <!-- Módulo de Nueva Factura con Subsección "Datos de la Factura" -->
-    <section class="invoice-section card">
-        <h2>Nueva Factura</h2>
-        <form id="facturaForm">
-
-            <h3>Datos de la Factura</h3>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="fechaEmision">Fecha de Emisión</label>
-                    <input type="date" id="fechaEmision" required>
+            <div class="sidebar-footer-row">
+                <div class="env-badge" title="Conectado a Web Services de Homologación ARCA/AFIP">
+                    <span class="status-dot-green"></span>
+                    <span>Homologación</span>
                 </div>
-                <div class="form-group">
-                    <label for="puntoVentaId">Punto de Venta</label>
-                    <select id="puntoVentaId" required>
-                        <option value="1">0001 - Casa Central Mendoza</option>
+                <button type="button" id="themeToggle" class="btn-icon-theme" title="Cambiar tema claro/oscuro">☀️</button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ==========================================
+         ÁREA PRINCIPAL DE TRABAJO
+    =========================================== -->
+    <main class="main-content">
+
+        <!-- ======================================
+             VISTA 1: FACTURACIÓN (SIN EMITIR / EMITIDAS / ELIMINADAS)
+        ======================================= -->
+        <div id="vistaFacturacion" class="module-view">
+            <header class="page-header">
+                <div>
+                    <h2 id="tituloSeccion">Sin emitir</h2>
+                    <p id="subtituloSeccion">Revisá tus facturas y validalas con ARCA cuando estén listas.</p>
+                </div>
+
+                <div class="toolbar-actions">
+                    <button type="button" id="btnAbrirFiltros" class="btn-outline">
+                        <span>🔍</span> Filtros
+                        <span id="badgeFiltrosActivos" class="filter-count-badge" style="display: none;">0</span>
+                    </button>
+                    <button type="button" id="btnRecargar" class="btn-outline">
+                        <span>↻</span> Recargar
+                    </button>
+                    <button type="button" id="btnExportarPdf" class="btn-outline" title="Exportar listado a PDF">
+                        📄 PDF
+                    </button>
+                    <button type="button" id="btnExportarExcel" class="btn-outline" title="Exportar listado a Excel">
+                        📊 Excel
+                    </button>
+                    <button type="button" id="btnNuevaFacturaHeader" class="btn-primary">
+                        + Nueva factura
+                    </button>
+                </div>
+            </header>
+
+            <div id="activeFiltersBar" class="active-filters-bar" style="display: none;">
+                <span class="filters-label">Filtros aplicados:</span>
+                <div id="activeFiltersChips" class="chips-container"></div>
+                <button type="button" id="btnLimpiarFiltrosRapido" class="btn-link-clear">Limpiar todos</button>
+            </div>
+
+            <section class="table-card">
+                <div class="table-responsive">
+                    <table id="tablaFacturas" class="data-table">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Número</th>
+                            <th id="thColumnaFecha">Creación interna</th>
+                            <th>Cliente</th>
+                            <th>Condición IVA</th>
+                            <th>Punto de venta</th>
+                            <th class="text-right">Total</th>
+                            <th class="text-center">Ítems</th>
+                            <th>Estado</th>
+                            <th class="text-right">Acciones</th>
+                        </tr>
+                        </thead>
+                        <tbody id="tbodyFacturas"></tbody>
+                    </table>
+                </div>
+
+                <footer class="pagination-bar">
+                    <div class="pagination-summary">
+                        <span id="rangoRegistros">0–0 de 0</span>
+                    </div>
+
+                    <div class="pagination-controls">
+                        <button type="button" id="btnPrevPage" class="btn-page" disabled title="Página anterior">‹</button>
+                        <span id="pageInfo" class="page-indicator">Página 1 de 1</span>
+                        <button type="button" id="btnNextPage" class="btn-page" disabled title="Página siguiente">›</button>
+                    </div>
+
+                    <div class="pagination-size">
+                        <label for="selectPageSize">Filas</label>
+                        <select id="selectPageSize">
+                            <option value="5">5</option>
+                            <option value="10" selected>10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                        </select>
+                    </div>
+                </footer>
+            </section>
+        </div>
+
+        <!-- ======================================
+             VISTA 2: OPERACIÓN -> CLIENTES
+        ======================================= -->
+        <div id="vistaClientes" class="module-view" style="display: none;">
+            <header class="page-header">
+                <div>
+                    <h2>Clientes</h2>
+                    <p>Consultá y administrá los clientes disponibles para facturación.</p>
+                </div>
+                <div class="toolbar-actions">
+                    <button type="button" id="btnNuevoCliente" class="btn-primary">+ Nuevo cliente</button>
+                </div>
+            </header>
+
+            <div class="op-toolbar-card">
+                <div class="op-search-group">
+                    <input type="text" id="inputBuscarClienteOp" class="form-control" placeholder="Buscar por nombre, CUIT/CUIL, email o domicilio...">
+                </div>
+                <div class="op-filters-group">
+                    <select id="filtroEstadoClienteOp" class="form-control">
+                        <option value="ACTIVOS">Activos</option>
+                        <option value="BAJA">Dados de baja</option>
+                        <option value="TODOS">Todos</option>
+                    </select>
+                    <select id="ordenClienteOp" class="form-control">
+                        <option value="RECIENTES">Últimos agregados</option>
+                        <option value="NOMBRE">Alfabético (A-Z)</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label>Cliente</label>
-                    <div class="input-group-modal">
-                        <input type="hidden" id="clienteId" value="1">
-                        <input type="text" id="clienteNombre" value="Cliente Final (27-12345678-9)" readonly>
-                        <button type="button" id="btnAbrirModalCliente" class="btn-primary" title="Buscar Cliente">🔍</button>
+            </div>
+
+            <section class="table-card">
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Documento</th>
+                            <th>Denominación</th>
+                            <th>Contacto</th>
+                            <th>Domicilio</th>
+                            <th>Última compra</th>
+                            <th class="text-right">Acciones</th>
+                        </tr>
+                        </thead>
+                        <tbody id="tbodyClientesOp"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- ======================================
+             VISTA 3: OPERACIÓN -> ARTÍCULOS
+        ======================================= -->
+        <div id="vistaArticulos" class="module-view" style="display: none;">
+            <header class="page-header">
+                <div>
+                    <h2>Artículos</h2>
+                    <p>Consultá los artículos y sus precios vigentes por lista.</p>
+                </div>
+                <div class="toolbar-actions">
+                    <button type="button" id="btnNuevoArticuloOp" class="btn-primary">+ Nuevo artículo</button>
+                </div>
+            </header>
+
+            <div class="op-toolbar-card">
+                <div class="op-search-group">
+                    <input type="text" id="inputBuscarArticuloOp" class="form-control" placeholder="Buscar por código, artículo, rubro o marca...">
+                </div>
+                <div class="op-filters-group">
+                    <select id="filtroEstadoArticuloOp" class="form-control">
+                        <option value="ACTIVOS">Activos</option>
+                        <option value="BAJA">Dados de baja</option>
+                        <option value="TODOS">Todos</option>
+                    </select>
+                    <select id="filtroListaArticuloOp" class="form-control">
+                        <option value="TODAS">Todas las listas</option>
+                        <option value="1">Lista minorista</option>
+                        <option value="2">Lista mayorista</option>
+                    </select>
+                </div>
+            </div>
+
+            <section class="table-card">
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                        <tr>
+                            <th>Artículo ID</th>
+                            <th>Código</th>
+                            <th>Artículo</th>
+                            <th>Rubro</th>
+                            <th>Marca</th>
+                            <th>Lista</th>
+                            <th class="text-right">Precio final</th>
+                            <th class="text-right">Acciones</th>
+                        </tr>
+                        </thead>
+                        <tbody id="tbodyArticulosOp"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- ======================================
+             VISTA 4: OPERACIÓN -> MARCAS
+        ======================================= -->
+        <div id="vistaMarcas" class="module-view" style="display: none;">
+            <header class="page-header">
+                <div>
+                    <h2>Marcas</h2>
+                    <p>Administrá las marcas disponibles para los artículos.</p>
+                </div>
+                <div class="toolbar-actions">
+                    <button type="button" id="btnNuevaMarcaOp" class="btn-primary">+ Nueva marca</button>
+                </div>
+            </header>
+
+            <div class="op-toolbar-card">
+                <div class="op-search-group">
+                    <input type="text" id="inputBuscarMarcaOp" class="form-control" placeholder="Buscar marca por código o denominación...">
+                </div>
+                <div class="op-filters-group">
+                    <select id="filtroEstadoMarcaOp" class="form-control">
+                        <option value="ACTIVOS">Activas</option>
+                        <option value="BAJA">Dadas de baja</option>
+                        <option value="TODOS">Todas</option>
+                    </select>
+                </div>
+            </div>
+
+            <section class="table-card">
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Código</th>
+                            <th>Denominación</th>
+                            <th>Fecha de alta</th>
+                            <th>Estado</th>
+                            <th class="text-right">Acciones</th>
+                        </tr>
+                        </thead>
+                        <tbody id="tbodyMarcasOp"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- ======================================
+             VISTA 5: OPERACIÓN -> RUBROS
+        ======================================= -->
+        <div id="vistaRubros" class="module-view" style="display: none;">
+            <header class="page-header">
+                <div>
+                    <h2>Rubros</h2>
+                    <p>Administrá los rubros disponibles para clasificar artículos.</p>
+                </div>
+                <div class="toolbar-actions">
+                    <button type="button" id="btnNuevoRubroOp" class="btn-primary">+ Nuevo rubro</button>
+                </div>
+            </header>
+
+            <div class="op-toolbar-card">
+                <div class="op-search-group">
+                    <input type="text" id="inputBuscarRubroOp" class="form-control" placeholder="Buscar rubro por código o denominación...">
+                </div>
+                <div class="op-filters-group">
+                    <select id="filtroEstadoRubroOp" class="form-control">
+                        <option value="ACTIVOS">Activos</option>
+                        <option value="BAJA">Dados de baja</option>
+                        <option value="TODOS">Todos</option>
+                    </select>
+                </div>
+            </div>
+
+            <section class="table-card">
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Código</th>
+                            <th>Denominación</th>
+                            <th>Fecha de alta</th>
+                            <th>Estado</th>
+                            <th class="text-right">Acciones</th>
+                        </tr>
+                        </thead>
+                        <tbody id="tbodyRubrosOp"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+    </main>
+</div>
+
+<!-- =========================================================
+     MODAL 1: NUEVA FACTURA / EDITAR FACTURA (FACTURA C)
+========================================================== -->
+<div id="modalFacturaForm" class="modal-overlay">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-header">
+            <div class="modal-title-group">
+                <h3 id="tituloModalFactura">Nueva factura</h3>
+                <span class="badge-comprobante">🧾 Factura C · Cód. 11</span>
+            </div>
+            <button type="button" class="btn-close-modal" id="closeModalFacturaForm">&times;</button>
+        </div>
+
+        <form id="facturaForm" class="modal-body">
+            <input type="hidden" id="editFacturaId" value="">
+
+            <div class="section-caption">Datos del comprobante</div>
+
+            <div class="invoice-meta-grid">
+                <div class="meta-field">
+                    <span class="meta-label">Número</span>
+                    <span id="metaNumeroFactura" class="meta-value muted-italic">Se asigna al emitir</span>
+                </div>
+
+                <div class="meta-field">
+                    <span class="meta-label">Fecha y hora</span>
+                    <span id="metaFechaFactura" class="meta-value muted-italic">Se asigna al emitir</span>
+                </div>
+
+                <div class="meta-field">
+                    <label for="puntoVentaId" class="meta-label">Punto de venta</label>
+                    <select id="puntoVentaId" class="form-control" required>
+                        <option value="1">1 - Sucursal Central</option>
+                    </select>
+                </div>
+
+                <div class="meta-field">
+                    <label class="meta-label">Cliente</label>
+                    <div class="client-selector-box">
+                        <input type="hidden" id="clienteId" value="">
+                        <input type="text" id="clienteNombre" class="form-control readonly-display" value="Consumidor Final" readonly>
+                        <button type="button" id="btnAbrirModalCliente" class="btn-icon-search" title="Buscar cliente">🔍</button>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label for="condicionIvaId">Condición frente al IVA</label>
-                    <select id="condicionIvaId" required>
-                        <option value="1">Responsable Inscripto (Factura A)</option>
-                        <option value="2">Consumidor Final (Factura B/C)</option>
+
+                <div class="meta-field">
+                    <label for="listaPrecioId" class="meta-label">Lista de precios</label>
+                    <select id="listaPrecioId" class="form-control" required></select>
+                </div>
+
+                <div class="meta-field">
+                    <label for="condicionIvaId" class="meta-label">Condición de IVA</label>
+                    <select id="condicionIvaId" class="form-control" required>
+                        <option value="2">Consumidor Final</option>
+                        <option value="1">IVA Responsable Inscripto</option>
+                        <option value="3">Responsable Monotributo</option>
+                        <option value="4">IVA Sujeto Exento</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label for="tipoMonedaId">Moneda de Emisión</label>
-                    <select id="tipoMonedaId" required>
-                        <option value="1">ARS - Pesos Argentinos</option>
-                        <option value="2">USD - Dólares</option>
+
+                <div class="meta-field">
+                    <label for="tipoMonedaId" class="meta-label">Tipo de moneda</label>
+                    <select id="tipoMonedaId" class="form-control" required>
+                        <option value="1">Peso Argentino ($)</option>
+                        <option value="2">Dólar Estadounidense (USD)</option>
                     </select>
                 </div>
-            </div>
 
-            <h3>Detalles de la Factura (Ítems)</h3>
-            <div class="form-grid items-grid">
-                <div class="form-group">
-                    <label>Seleccione Artículo (Explorer)</label>
-                    <div class="input-group-modal">
-                        <input type="hidden" id="articuloIdSelected">
-                        <input type="hidden" id="articuloPrecioSelected">
-                        <input type="text" id="articuloNombreSelected" placeholder="Haga clic en buscar..." readonly>
-                        <button type="button" id="btnAbrirModalArticulo" class="btn-primary">🔍 Buscar</button>
-                    </div>
+                <div class="meta-field">
+                    <span class="meta-label">Usuario</span>
+                    <span class="meta-value">Usuario Administrador (admin)</span>
                 </div>
-                <div class="form-group">
-                    <label for="cantidad">Cantidad</label>
-                    <input type="number" id="cantidad" min="1" value="1">
-                </div>
-                <div class="form-group align-bottom">
-                    <button type="button" id="btnAgregarItem" class="btn-secondary">Agregar Ítem</button>
+
+                <div class="meta-field meta-span-full">
+                    <label for="observaciones" class="meta-label">Observaciones</label>
+                    <input type="text" id="observaciones" class="form-control" placeholder="Sin observaciones">
                 </div>
             </div>
 
-            <table id="tablaDetalles" class="modern-table">
-                <thead>
-                <tr>
-                    <th>Ítem / Artículo</th>
-                    <th>Cantidad</th>
-                    <th>Precio Unit.</th>
-                    <th>Subtotal</th>
-                    <th>Acción</th>
-                </tr>
-                </thead>
-                <tbody>
-                <!-- Ítems dinámicos -->
-                </tbody>
-            </table>
+            <!-- Tabla de ítems SIN IVA discriminado (Factura C) -->
+            <div class="items-section">
+                <div class="table-responsive">
+                    <table id="tablaDetalles" class="items-table">
+                        <thead>
+                        <tr>
+                            <th style="width: 38%;">Artículo</th>
+                            <th class="text-right" style="width: 17%;">Precio unitario</th>
+                            <th class="text-center" style="width: 13%;">Cantidad</th>
+                            <th class="text-center" style="width: 15%;">Bonificación</th>
+                            <th class="text-right" style="width: 13%;">Subtotal</th>
+                            <th style="width: 4%;"></th>
+                        </tr>
+                        </thead>
+                        <tbody id="tbodyDetalles"></tbody>
+                    </table>
+                </div>
 
-            <div class="totals">
-                <p>Subtotal: $<span id="importeSubtotal">0.00</span></p>
-                <p>Total a Cobrar: $<span id="importeTotal">0.00</span></p>
+                <div class="add-item-center">
+                    <button type="button" id="btnAbrirModalArticulo" class="btn-add-item-pill">
+                        <span>+</span> Agregar artículo
+                    </button>
+                </div>
+
+                <div class="invoice-total-footer">
+                    <span class="total-label">Total calculado</span>
+                    <span id="importeTotal" class="total-amount">$ 0,00</span>
+                </div>
             </div>
 
-            <button type="submit" id="btnGuardarFactura" class="btn-success">Emitir y Guardar Factura</button>
+            <div class="modal-submit-bar">
+                <button type="submit" id="btnGuardarFactura" class="btn-save-draft">
+                    ✓ Guardar sin emitir
+                </button>
+            </div>
         </form>
-    </section>
-
-    <!-- Grilla de Comprobantes Registrados -->
-    <section class="records-section card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <h2>Comprobantes Registrados</h2>
-            <div style="display: flex; gap: 10px;">
-                <button id="btnExportarPdf" class="btn-secondary">📄 Exportar PDF</button>
-                <button id="btnExportarExcel" class="btn-secondary">📊 Exportar Excel</button>
-            </div>
-        </div>
-
-        <table id="tablaFacturas" class="modern-table">
-            <thead>
-            <tr>
-                <th>Número</th>
-                <th>Fecha Emisión</th>
-                <th>Estado</th>
-                <th>Total</th>
-                <th>Estado ARCA</th>
-                <th>Acciones</th>
-            </tr>
-            </thead>
-            <tbody>
-            <!-- Facturas cargadas dinámicamente -->
-            </tbody>
-        </table>
-
-        <!-- Paginación de la Grilla -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
-            <button id="btnPrevPage" class="btn-primary" disabled>◀ Anterior</button>
-            <span id="pageInfo">Página 1</span>
-            <button id="btnNextPage" class="btn-primary">Siguiente ▶</button>
-        </div>
-    </section>
-</div>
-
-<!-- ==============================================
-     VENTANAS MODALES (EXPLORER) - REQUISITO CÁTEDRA
-     ============================================== -->
-<!-- Modal Cliente -->
-<div id="modalCliente" class="modal-overlay">
-    <div class="modal-content">
-        <span class="close-modal" id="closeModalCliente">&times;</span>
-        <h3 style="margin-top: 0;">Explorer: Búsqueda de Clientes</h3>
-        <input type="text" id="searchClienteModal" placeholder="Filtrar por nombre o CUIT..." style="width: 100%; margin-bottom: 15px;">
-        <table class="modern-table">
-            <thead><tr><th>ID</th><th>CUIT</th><th>Denominación</th><th>Acción</th></tr></thead>
-            <tbody id="tbodyClientesModal">
-            <!-- Por ahora hardcodeado, luego lo conectaremos al backend -->
-            <tr>
-                <td>1</td><td>27-12345678-9</td><td>Cliente Final</td>
-                <td><button type="button" class="btn-secondary btn-seleccionar-cliente" data-id="1" data-nombre="Cliente Final (27-12345678-9)">Elegir</button></td>
-            </tr>
-            </tbody>
-        </table>
     </div>
 </div>
 
-<!-- Modal Artículo Mejorado -->
-<div id="modalArticulo" class="modal-overlay">
-    <div class="modal-content">
-        <span class="close-modal" id="closeModalArticulo">&times;</span>
-        <h3 style="margin-top: 0;">Explorer: Catálogo de Artículos</h3>
-
-        <div class="explorer-toolbar">
-            <div class="filter-tabs" id="tabsListaArticulos">
-                <button type="button" class="tab-btn active" data-lista="TODAS">Todos</button>
-                <button type="button" class="tab-btn" data-lista="Lista Minorista">Minorista</button>
-                <button type="button" class="tab-btn" data-lista="Lista Mayorista">Mayorista</button>
+<!-- =========================================================
+     MODAL 2: EXPLORER DE ARTÍCULOS (FILTRADO POR LISTA)
+========================================================== -->
+<div id="modalArticulo" class="modal-overlay modal-nested">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-header">
+            <div class="modal-title-group">
+                <h3>Agregar artículo</h3>
+                <span id="badgeListaActivaExplorer" class="badge-lista badge-minorista">Precio minorista</span>
             </div>
-            <input type="text" id="searchArticuloModal" placeholder="🔍 Escriba para buscar por nombre de producto..." style="width: 100%; box-sizing: border-box;">
+            <button type="button" class="btn-close-modal" id="closeModalArticulo">&times;</button>
         </div>
 
-        <table class="modern-table">
-            <thead>
-            <tr>
-                <th>Lista de Precio</th>
-                <th>Artículo</th>
-                <th>Precio Unit.</th>
-                <th style="text-align: center;">Acción</th>
-            </tr>
-            </thead>
-            <tbody id="tbodyArticulosModal">
-            <!-- Se llenará dinámicamente con TypeScript -->
-            </tbody>
-        </table>
+        <div class="modal-body">
+            <div class="explorer-search-bar">
+                <input type="text" id="searchArticuloModal" class="form-control" placeholder="🔍 Buscar por código o nombre de artículo...">
+            </div>
 
-        <div class="explorer-footer">
-            <span id="contadorArticulosModal">Mostrando 0 artículos</span>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Artículo</th>
+                        <th>Lista</th>
+                        <th class="text-right">Precio unitario</th>
+                        <th class="text-center">Acción</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tbodyArticulosModal"></tbody>
+                </table>
+            </div>
+
+            <div class="explorer-footer">
+                <span id="contadorArticulosModal">Mostrando 0 artículos</span>
+            </div>
         </div>
     </div>
 </div>
 
-<script type="module" src="app.js?v=3"></script>
+<!-- =========================================================
+     MODAL 3: EXPLORER DE CLIENTES
+========================================================== -->
+<div id="modalCliente" class="modal-overlay modal-nested">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-header">
+            <div class="modal-title-group">
+                <h3>Buscar cliente</h3>
+            </div>
+            <button type="button" class="btn-close-modal" id="closeModalCliente">&times;</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="client-explorer-top">
+                <input type="text" id="searchClienteModal" class="form-control" placeholder="🔍 Filtrar por denominación o CUIT/CUIL...">
+                <button type="button" id="btnElegirConsumidorFinal" class="btn-outline">
+                    👤 Consumidor Final
+                </button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>CUIT / CUIL</th>
+                        <th>Denominación</th>
+                        <th class="text-center">Acción</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tbodyClientesModal"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================
+     MODAL 4: FILTRAR COMPROBANTES
+========================================================== -->
+<div id="modalFiltros" class="modal-overlay">
+    <div class="modal-dialog modal-md">
+        <div class="modal-header">
+            <h3>Filtrar comprobantes</h3>
+            <button type="button" class="btn-close-modal" id="closeModalFiltros">&times;</button>
+        </div>
+
+        <form id="formFiltros" class="modal-body">
+            <div class="filters-grid">
+                <div class="form-group">
+                    <label for="filtroCliente">Cliente</label>
+                    <input type="text" id="filtroCliente" class="form-control" placeholder="Nombre del cliente">
+                </div>
+
+                <div class="form-group">
+                    <label for="filtroNumero">N.º factura</label>
+                    <input type="number" id="filtroNumero" class="form-control" placeholder="Número exacto">
+                </div>
+
+                <div class="form-group">
+                    <label for="filtroFechaDesde">Desde</label>
+                    <input type="date" id="filtroFechaDesde" class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <label for="filtroFechaHasta">Hasta</label>
+                    <input type="date" id="filtroFechaHasta" class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <label for="filtroMontoMinimo">Monto mínimo</label>
+                    <input type="number" id="filtroMontoMinimo" class="form-control" min="0" step="0.01" placeholder="Ej: 1000">
+                </div>
+            </div>
+
+            <div class="filters-footer">
+                <button type="button" id="btnLimpiarModalFiltros" class="btn-outline">🧹 Limpiar</button>
+                <button type="submit" class="btn-primary">✓ Aplicar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- =========================================================
+     MODAL 5: DETALLE DE FACTURA
+========================================================== -->
+<div id="modalDetalleFactura" class="modal-overlay">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-header">
+            <div class="modal-title-group">
+                <h3 id="detalleTitulo">Detalle de comprobante</h3>
+                <span class="badge-comprobante">Factura C · Cód. 11</span>
+                <span id="detalleEstadoBadge" class="status-pill">Sin emitir</span>
+            </div>
+            <button type="button" class="btn-close-modal" id="closeModalDetalleFactura">&times;</button>
+        </div>
+
+        <div class="modal-body" id="detalleBodyContent"></div>
+    </div>
+</div>
+
+<!-- =========================================================
+     MODAL 6: CONFIRMACIÓN PERSONALIZADA (REEMPLAZA confirm())
+========================================================== -->
+<div id="modalConfirmacion" class="modal-overlay modal-topmost">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-header">
+            <h3 id="confirmTitulo">Confirmar acción</h3>
+            <button type="button" class="btn-close-modal" id="closeModalConfirmacion">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p id="confirmMensaje" class="confirm-message">¿Desea continuar con esta operación?</p>
+            <div class="confirm-actions">
+                <button type="button" id="btnCancelarConfirm" class="btn-outline">Cancelar</button>
+                <button type="button" id="btnAceptarConfirm" class="btn-primary">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================
+     MODAL 7: NUEVO / EDITAR CLIENTE (OPERACIÓN)
+========================================================== -->
+<div id="modalFormClienteOp" class="modal-overlay">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-header">
+            <h3 id="tituloModalClienteOp">Nuevo cliente</h3>
+            <button type="button" class="btn-close-modal" id="closeModalClienteOp">&times;</button>
+        </div>
+
+        <form id="formClienteOp" class="modal-body">
+            <input type="hidden" id="editClienteOpId" value="">
+            <div class="op-form-grid">
+                <div class="form-group">
+                    <label for="cliTipoDoc">Tipo de documento</label>
+                    <select id="cliTipoDoc" class="form-control">
+                        <option value="CUIT">CUIT</option>
+                        <option value="CUIL">CUIL</option>
+                        <option value="DNI">DNI</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="cliCuit">CUIT / Documento</label>
+                    <input type="text" id="cliCuit" class="form-control" placeholder="Ej: 20-34567890-1" required>
+                    <small class="field-hint">En homologación ARCA valida 11 dígitos al emitir.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="cliDenominacion">Denominación / Razón Social</label>
+                    <input type="text" id="cliDenominacion" class="form-control" placeholder="Nombre completo o empresa" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="cliCondicionIva">Condición de IVA</label>
+                    <select id="cliCondicionIva" class="form-control">
+                        <option value="2">Consumidor Final</option>
+                        <option value="1">IVA Responsable Inscripto</option>
+                        <option value="3">Responsable Monotributo</option>
+                        <option value="4">IVA Sujeto Exento</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="cliListaPrecio">Lista de precios predeterminada</label>
+                    <select id="cliListaPrecio" class="form-control">
+                        <option value="1">Precio minorista (MINORISTA)</option>
+                        <option value="2">Precio mayorista (MAYORISTA)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="cliTelefono">Teléfono</label>
+                    <input type="text" id="cliTelefono" class="form-control" placeholder="Ej: 2614200000">
+                </div>
+
+                <div class="form-group">
+                    <label for="cliCelular">Celular</label>
+                    <input type="text" id="cliCelular" class="form-control" placeholder="Ej: 2615000000">
+                </div>
+
+                <div class="form-group">
+                    <label for="cliEmail">Email</label>
+                    <input type="email" id="cliEmail" class="form-control" placeholder="cliente@dominio.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="cliCalle">Calle</label>
+                    <input type="text" id="cliCalle" class="form-control" placeholder="Av. San Martín">
+                </div>
+
+                <div class="form-group">
+                    <label for="cliNumero">Número</label>
+                    <input type="text" id="cliNumero" class="form-control" placeholder="1250">
+                </div>
+            </div>
+
+            <div class="modal-submit-bar">
+                <button type="submit" class="btn-save-draft">✓ Guardar cliente</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- =========================================================
+     MODAL 8: NUEVO ARTÍCULO CON LISTAS DE PRECIOS (OPERACIÓN)
+========================================================== -->
+<div id="modalFormArticuloOp" class="modal-overlay">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-header">
+            <h3>Nuevo artículo</h3>
+            <button type="button" class="btn-close-modal" id="closeModalArticuloOp">&times;</button>
+        </div>
+
+        <form id="formArticuloOp" class="modal-body">
+            <div class="op-form-grid-3">
+                <div class="form-group">
+                    <label for="artDenominacion">Denominación</label>
+                    <input type="text" id="artDenominacion" class="form-control" placeholder="Nombre del artículo" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="artRubroSelect">Rubro</label>
+                    <select id="artRubroSelect" class="form-control" required></select>
+                </div>
+
+                <div class="form-group">
+                    <label for="artMarcaSelect">Marca</label>
+                    <select id="artMarcaSelect" class="form-control" required></select>
+                </div>
+            </div>
+
+            <div class="section-caption" style="margin-top: 18px;">Listas de precios</div>
+
+            <div class="price-lists-toggle-grid">
+                <div class="price-list-box">
+                    <label class="switch-row">
+                        <input type="checkbox" id="chkListaMinorista" checked>
+                        <span class="switch-slider"></span>
+                        <span class="switch-label">Lista minorista</span>
+                    </label>
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label for="inputPrecioMinorista">Precio final ($)</label>
+                        <input type="number" id="inputPrecioMinorista" class="form-control" min="0.01" step="0.01" placeholder="Ej: 1500.00">
+                    </div>
+                </div>
+
+                <div class="price-list-box">
+                    <label class="switch-row">
+                        <input type="checkbox" id="chkListaMayorista">
+                        <span class="switch-slider"></span>
+                        <span class="switch-label">Lista mayorista</span>
+                    </label>
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label for="inputPrecioMayorista">Precio final ($)</label>
+                        <input type="number" id="inputPrecioMayorista" class="form-control" min="0.01" step="0.01" placeholder="Ej: 1200.00" disabled>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-submit-bar">
+                <button type="submit" class="btn-save-draft">✓ Crear artículo</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- =========================================================
+     MODAL 9: NUEVA / EDITAR MARCA (OPERACIÓN)
+========================================================== -->
+<div id="modalFormMarcaOp" class="modal-overlay">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-header">
+            <h3 id="tituloModalMarcaOp">Nueva marca</h3>
+            <button type="button" class="btn-close-modal" id="closeModalMarcaOp">&times;</button>
+        </div>
+
+        <form id="formMarcaOp" class="modal-body">
+            <input type="hidden" id="editMarcaOpId" value="">
+            <div class="form-group">
+                <label for="marcaDenominacion">Denominación</label>
+                <input type="text" id="marcaDenominacion" class="form-control" placeholder="Ej: Samsung, Logitech..." required>
+            </div>
+            <div class="modal-submit-bar">
+                <button type="submit" class="btn-save-draft">✓ Guardar marca</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- =========================================================
+     MODAL 10: NUEVO / EDITAR RUBRO (OPERACIÓN)
+========================================================== -->
+<div id="modalFormRubroOp" class="modal-overlay">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-header">
+            <h3 id="tituloModalRubroOp">Nuevo rubro</h3>
+            <button type="button" class="btn-close-modal" id="closeModalRubroOp">&times;</button>
+        </div>
+
+        <form id="formRubroOp" class="modal-body">
+            <input type="hidden" id="editRubroOpId" value="">
+            <div class="form-group">
+                <label for="rubroDenominacion">Denominación</label>
+                <input type="text" id="rubroDenominacion" class="form-control" placeholder="Ej: Audio y Video, Oficina..." required>
+            </div>
+            <div class="modal-submit-bar">
+                <button type="submit" class="btn-save-draft">✓ Guardar rubro</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script type="module" src="app.js?v=5"></script>
 </body>
 </html>

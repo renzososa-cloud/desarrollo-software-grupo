@@ -10,8 +10,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class FacturaDetalleRequestDTO {
-    // Recibe el ID en lugar de la entidad anidada
-    private Long articuloId;
+    private Long listaPrecioArticuloId;
     private double cantidad;
     private double porcentajeBonificacion;
 }

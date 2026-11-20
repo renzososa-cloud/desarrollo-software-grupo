@@ -8,8 +8,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ArticuloCatalogoDTO {
-    private Long id; // El ID de lista_precio_articulo (del 1 al 12)
-    private String articuloNombre; // Ej: "Arroz Blanco 1kg"
-    private Double precioVenta; // Ej: 1500.0
-    private String listaNombre; // Ej: "Lista Minorista" o "Lista Mayorista"
+    private Long id;
+    private Long articuloId;
+    private String articuloCodigo;
+    private String articuloNombre;
+    private String rubroNombre;
+    private String marcaNombre;
+    private Double precioVenta;
+    private Long listaPrecioId;
+    private String listaPrecioCodigo;
+    private String listaNombre;
 }

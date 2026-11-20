@@ -2,7 +2,10 @@ package ar.edu.utn.controlador;
 
 import ar.edu.utn.dto.FacturaReporteDTO;
 import ar.edu.utn.dto.FacturaRequestDTO;
+import ar.edu.utn.dto.FacturaResponseDTO;
 import ar.edu.utn.modelo.FacturaVenta;
+import ar.edu.utn.modelo.ListaPrecio;
+import ar.edu.utn.repositorio.ListaPrecioRepository;
 import ar.edu.utn.servicio.FacturaService;
 import ar.edu.utn.servicio.ReporteService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,40 +28,51 @@ public class FacturaRestController {
 
     private final FacturaService facturaService;
     private final ReporteService reporteService;
+    private final ListaPrecioRepository listaPrecioRepository;
 
     @Autowired
-    public FacturaRestController(FacturaService facturaService, ReporteService reporteService) {
+    public FacturaRestController(FacturaService facturaService, ReporteService reporteService, ListaPrecioRepository listaPrecioRepository) {
         this.facturaService = facturaService;
         this.reporteService = reporteService;
+        this.listaPrecioRepository = listaPrecioRepository;
     }
 
     @GetMapping
     public ResponseEntity<Page<FacturaReporteDTO>> buscarFacturasFiltradas(
+            @RequestParam(defaultValue = "SIN_EMITIR") String tab,
             @RequestParam(required = false) Long numero,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date fechaDesde,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date fechaHasta,
             @RequestParam(required = false) String cliente,
-            @RequestParam(required = false) Boolean informadaArca,
+            @RequestParam(required = false) Double montoMinimo,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("fechaEmision").descending());
-        Page<FacturaReporteDTO> result = facturaService.buscarFacturasPaginadas(numero, fechaDesde, fechaHasta, cliente, informadaArca, pageable);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        Page<FacturaReporteDTO> result = facturaService.buscarFacturasPaginadas(tab, numero, fechaDesde, fechaHasta, cliente, montoMinimo, pageable);
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<FacturaResponseDTO> obtenerFacturaPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(facturaService.obtenerPorId(id));
+    }
+
+    @GetMapping("/listas-precios")
+    public ResponseEntity<List<ListaPrecio>> obtenerListasPrecios() {
+        return ResponseEntity.ok(listaPrecioRepository.findAll());
+    }
+
     @PostMapping
-    public ResponseEntity<FacturaReporteDTO> crearFactura(@RequestBody FacturaRequestDTO requestDTO) {
+    public ResponseEntity<FacturaResponseDTO> crearFactura(@RequestBody FacturaRequestDTO requestDTO) {
         FacturaVenta facturaCreada = facturaService.crear(requestDTO);
-        FacturaReporteDTO reporteDTO = facturaService.mapearADto(facturaCreada);
-        return ResponseEntity.status(HttpStatus.CREATED).body(reporteDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(facturaService.mapearAResponseDto(facturaCreada));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<FacturaReporteDTO> actualizarFactura(@PathVariable Long id, @RequestBody FacturaRequestDTO requestDTO) {
+    public ResponseEntity<FacturaResponseDTO> actualizarFactura(@PathVariable Long id, @RequestBody FacturaRequestDTO requestDTO) {
         FacturaVenta facturaActualizada = facturaService.actualizar(id, requestDTO);
-        FacturaReporteDTO reporteDTO = facturaService.mapearADto(facturaActualizada);
-        return ResponseEntity.ok(reporteDTO);
+        return ResponseEntity.ok(facturaService.mapearAResponseDto(facturaActualizada));
     }
 
     @DeleteMapping("/{id}")
@@ -67,26 +81,38 @@ public class FacturaRestController {
         return ResponseEntity.noContent().build();
     }
 
+    @RequestMapping(value = "/{id}/restaurar", method = {RequestMethod.PUT, RequestMethod.PATCH})
+    public ResponseEntity<Void> restaurarFactura(@PathVariable Long id) {
+        facturaService.restaurar(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping({"/{id}/definitivo", "/{id}/permanente"})
+    public ResponseEntity<Void> eliminarFacturaDefinitiva(@PathVariable Long id) {
+        facturaService.eliminarDefinitivo(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/{id}/informar-arca")
-    public ResponseEntity<FacturaReporteDTO> informarArca(@PathVariable Long id) {
+    public ResponseEntity<?> informarArca(@PathVariable Long id) {
         try {
             FacturaVenta facturaInformada = facturaService.informarArca(id);
-            FacturaReporteDTO reporteDTO = facturaService.mapearADto(facturaInformada);
-            return ResponseEntity.ok(reporteDTO);
-        } catch (IllegalStateException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.ok(facturaService.mapearAResponseDto(facturaInformada));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
     @GetMapping("/exportar/pdf")
     public ResponseEntity<byte[]> exportarPdf(
+            @RequestParam(defaultValue = "EMITIDA") String tab,
             @RequestParam(required = false) Long numero,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date fechaDesde,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date fechaHasta,
             @RequestParam(required = false) String cliente,
-            @RequestParam(required = false) Boolean informadaArca
+            @RequestParam(required = false) Double montoMinimo
     ) {
-        List<FacturaReporteDTO> facturas = facturaService.buscarFacturasListado(numero, fechaDesde, fechaHasta, cliente, informadaArca);
+        List<FacturaReporteDTO> facturas = facturaService.buscarFacturasListado(tab, numero, fechaDesde, fechaHasta, cliente, montoMinimo);
         byte[] pdfBytes = reporteService.generarReportePdf(facturas);
 
         return ResponseEntity.ok()
@@ -97,13 +123,14 @@ public class FacturaRestController {
 
     @GetMapping("/exportar/excel")
     public ResponseEntity<byte[]> exportarExcel(
+            @RequestParam(defaultValue = "EMITIDA") String tab,
             @RequestParam(required = false) Long numero,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date fechaDesde,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date fechaHasta,
             @RequestParam(required = false) String cliente,
-            @RequestParam(required = false) Boolean informadaArca
+            @RequestParam(required = false) Double montoMinimo
     ) {
-        List<FacturaReporteDTO> facturas = facturaService.buscarFacturasListado(numero, fechaDesde, fechaHasta, cliente, informadaArca);
+        List<FacturaReporteDTO> facturas = facturaService.buscarFacturasListado(tab, numero, fechaDesde, fechaHasta, cliente, montoMinimo);
         byte[] excelBytes = reporteService.generarReporteTxt(facturas);
 
         return ResponseEntity.ok()
