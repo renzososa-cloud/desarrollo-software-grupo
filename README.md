@@ -50,7 +50,7 @@ El código está organizado en directorios independientes correspondientes a cad
 
 1. **Clonar el repositorio:**
    ```bash
-   git clone [https://github.com/jessi2001-cmd/desarrollo-software-grupo.git](https://github.com/jessi2001-cmd/desarrollo-software-grupo.git)
+   git clone https://github.com/renzososa-cloud/desarrollo-software-grupo.git
    cd desarrollo-software-grupo
    ```
 
